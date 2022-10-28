@@ -1,0 +1,229 @@
+apiVersion: influxdata.com/v2alpha1
+kind: Bucket
+metadata:
+    name: affectionate-lalande-74d001
+spec:
+    name: downsampled
+    retentionRules:
+      - everySeconds: 604800
+        type: expire
+---
+apiVersion: influxdata.com/v2alpha1
+kind: Bucket
+metadata:
+    name: burfect-roentgen-b4d001
+spec:
+    name: rawdata
+---
+apiVersion: influxdata.com/v2alpha1
+kind: Task
+metadata:
+    name: loving-blackwell-74d001
+spec:
+    every: 30s
+    name: Cup Counter
+    query: |-
+        import "influxdata/influxdb/monitor"
+        import "math"
+
+        option v = {timeRangeStart: -1h, timeRangeStop: now()}
+
+
+
+        data =
+            from(bucket: "rawdata")
+                |> range(start: v.timeRangeStart, stop: v.timeRangeStop)
+                |> filter(fn: (r) => r["_measurement"] == "power_meter")
+                |> filter(fn: (r) => r["_field"] == "pin_voltage")
+                |> aggregateWindow(every: 3s, fn: mean, createEmpty: false)
+                // Pin voltage is based on 3.3v VDD
+                |> map(fn: (r) => ({r with _value: r._value / 3.3}))
+                // STC sensor returns 1v=100A
+                |> map(fn: (r) => ({r with _value: math.abs(x: r._value) * 100.0, _field: "amperage"}))
+                // We're connected to a 10x gain line splitter
+                |> map(fn: (r) => ({r with _value: r._value / 10.0}))
+
+        data
+            |> map(
+                fn: (r) =>
+                    ({r with _level:
+                            if r._value >= 1.0 then
+                                "brewing"
+                            else
+                                "idle",
+                    }),
+            )
+            //   |> yield(name: "levels")
+            |> window(every: 10m)
+            |> monitor.stateChanges(toLevel: "brewing")
+            |> count()
+            |> rename(columns: {"_start": "_time"})
+            |> set(key: "_field", value: "cups")
+            |> set(key: "_measurement", value: "coffee_machine")
+            |> drop(columns: ["_level"])
+            |> to(bucket: "downsampled", org: "influxdata")
+---
+apiVersion: influxdata.com/v2alpha1
+kind: Dashboard
+metadata:
+    name: cranky-bohr-34d001
+spec:
+    charts:
+      - axes:
+          - base: "10"
+            name: x
+            scale: linear
+          - base: "10"
+            name: "y"
+            scale: linear
+        colorizeRows: true
+        colors:
+          - hex: '#00A3FF'
+            id: 36daabb1-f929-4e52-930e-94add88a70dc
+            name: Solid Blue
+            type: scale
+          - hex: '#00A3FF'
+            id: e473d0e6-59f0-42f0-acc2-38689d5c6c8c
+            name: Solid Blue
+            type: scale
+          - hex: '#00A3FF'
+            id: c63d5188-5830-4564-9bb0-c0268ddb93f9
+            name: Solid Blue
+            type: scale
+        geom: line
+        height: 4
+        hoverDimension: auto
+        kind: Xy
+        legendColorizeRows: true
+        legendOpacity: 1
+        legendOrientationThreshold: 1e+08
+        name: Sensor Voltage
+        opacity: 1
+        orientationThreshold: 1e+08
+        position: overlaid
+        queries:
+          - query: |-
+                from(bucket: "rawdata")
+                  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)
+                  |> filter(fn: (r) => r["_measurement"] == "power_meter")
+                  |> filter(fn: (r) => r["_field"] == "pin_voltage")
+                  |> aggregateWindow(every: 3s, fn: mean, createEmpty: false)
+                  |> yield(name: "mean")
+        staticLegend:
+            colorizeRows: true
+            opacity: 1
+            orientationThreshold: 1e+08
+            widthRatio: 1
+        width: 6
+        widthRatio: 1
+        xCol: _time
+        yCol: _value
+      - axes:
+          - name: x
+          - name: "y"
+        colors:
+          - hex: '#31C0F6'
+          - hex: '#BC00B8'
+          - hex: '#FF7E27'
+        height: 4
+        kind: Mosaic
+        legendColorizeRows: true
+        legendOpacity: 1
+        legendOrientationThreshold: 1e+08
+        name: Activity
+        queries:
+          - query: "import \"influxdata/influxdb/monitor\"\nimport \"math\"\n\ndata
+                = from(bucket: \"rawdata\")\n  |> range(start: v.timeRangeStart, stop:
+                v.timeRangeStop)\n  |> filter(fn: (r) => r[\"_measurement\"] == \"power_meter\")\n
+                \ |> filter(fn: (r) => r[\"_field\"] == \"pin_voltage\")\n  |> aggregateWindow(every:
+                3s, fn: mean, createEmpty: false)\n  // Pin voltage is based on 3.3v
+                VDD\n  |> map(fn: (r) => ({r with _value: r._value / 3.3}))\n  //
+                STC sensor returns 1v=100A\n  |> map(fn: (r) => ({r with _value: math.abs(x:
+                r._value) * 100.0, _field: \"amperage\" }))\n  // We're connected
+                to a 10x gain line splitter\n  |> map(fn: (r) => ({r with _value:
+                r._value / 10.0 }))\n\n// assign levels \ndata \n  |> map(\n        fn:
+                (r) => ({r with\n            _level: if r._value >= 1.0 then\n                \"brewing\"\n
+                \           else\n                \"idle\",\n        }),\n    )\n//
+                \  |> yield(name: \"levels\")\n//   |> monitor.stateChanges()\n//
+                \  |> count()"
+        staticLegend: {}
+        width: 9
+        xCol: _time
+        yPos: 4
+        ySeriesColumns:
+          - device
+      - axes:
+          - base: "10"
+            name: x
+            scale: linear
+          - base: "10"
+            name: "y"
+            scale: linear
+        colorizeRows: true
+        colors:
+          - hex: '#DC4E58'
+            id: 998c23c8-77e2-432e-a2eb-e602e540dcc5
+            name: Solid Red
+            type: scale
+          - hex: '#DC4E58'
+            id: 064117c4-6565-44bb-b38e-09d75dcac472
+            name: Solid Red
+            type: scale
+          - hex: '#DC4E58'
+            id: 4a849080-1ba4-4f1a-9442-9b74c54b2fe9
+            name: Solid Red
+            type: scale
+        geom: line
+        height: 4
+        hoverDimension: auto
+        kind: Xy
+        legendColorizeRows: true
+        legendOpacity: 1
+        legendOrientationThreshold: 1e+08
+        name: Amperage
+        opacity: 1
+        orientationThreshold: 1e+08
+        position: overlaid
+        queries:
+          - query: "import \"math\"\nfrom(bucket: \"rawdata\")\n  |> range(start:
+                v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r[\"_measurement\"]
+                == \"power_meter\")\n  |> filter(fn: (r) => r[\"_field\"] == \"pin_voltage\")\n
+                \ |> aggregateWindow(every: 3s, fn: mean, createEmpty: false)\n  //
+                Pin voltage is based on 3.3v VDD\n  |> map(fn: (r) => ({r with _value:
+                r._value / 3.3}))\n  // STC sensor returns 1v=100A\n  |> map(fn: (r)
+                => ({r with _value: math.abs(x: r._value) * 100.0, _field: \"amperage\"
+                }))\n  // We're connected to a 10x gain line splitter\n  |> map(fn:
+                (r) => ({r with _value: r._value / 10.0 }))\n  \n  |> yield(name:
+                \"mean\")"
+        staticLegend:
+            colorizeRows: true
+            opacity: 1
+            orientationThreshold: 1e+08
+            widthRatio: 1
+        width: 6
+        widthRatio: 1
+        xCol: _time
+        xPos: 6
+        yCol: _value
+      - colors:
+          - hex: '#00C9FF'
+            id: base
+            name: laser
+            type: text
+        decimalPlaces: 2
+        height: 4
+        kind: Single_Stat
+        name: Cups Brewed
+        queries:
+          - query: |-
+                from(bucket: "downsampled")
+                  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)
+                  |> filter(fn: (r) => r["_measurement"] == "coffee_machine")
+                  |> filter(fn: (r) => r["_field"] == "cups")
+                  |> sum()
+                  |> yield(name: "last")
+        staticLegend: {}
+        width: 3
+        xPos: 9
+        yPos: 4
+    name: Coffee Maker
