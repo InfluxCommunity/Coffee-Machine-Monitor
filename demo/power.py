@@ -52,12 +52,9 @@ while True:
     volts_per_value = 3.3 / 32767
     voltage = value * volts_per_value
 
-    # The STC013 returns 1v at 100A
-    amperage = abs(voltage * 30)
-
      # Get current time in nanoseconds from epoch
     timestamp = datetime.datetime.utcnow().timestamp() * 10**9
-    print(f'{MEASUREMENT},{TAGS} amperage={amperage},pin_voltage={voltage},adc_value={value} {timestamp:.0f}')
+    print(f'{MEASUREMENT},{TAGS} pin_voltage={voltage},adc_value={value} {timestamp:.0f}')
 
     # Pause for half a second.
     time.sleep(0.5)
