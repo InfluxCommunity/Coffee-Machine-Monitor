@@ -27,7 +27,7 @@ services:
       - DOCKER_INFLUXDB_INIT_PASSWORD=influxdb
       - DOCKER_INFLUXDB_INIT_ORG=influxdata 
       - DOCKER_INFLUXDB_INIT_BUCKET=rawdata
-      - DOCKER_INFLUXDB_INIT_RETENTION=24h
+      - DOCKER_INFLUXDB_INIT_RETENTION=2h
       - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=edge
     networks:
       - demo
