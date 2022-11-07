@@ -1,7 +1,13 @@
-#!/bin/sh
+#!/bin/bash
 
 # install local dashboard and tasks
-influx apply --file ./demo/template.yml
+EXISTING_STACK_ID=$(influx stack list --name coffee_stack |awk '{ print $1}')
+if [ -z "$EXISTING_STACK_ID" ]; then 
+EXISTING_STACK_ID=$(influx stacks init --hide-headers --stack-name coffee_stack --stack-description "Coffee demo dashboard and tasks" |awk '{print $1}');
+fi
+
+echo "Found stack: $EXISTING_STACK_ID"
+influx apply --force yes --file ./demo/template.yml --stack-id $EXISTING_STACK_ID
 
 # setup EDR to Cloud
 source ./.secrets
