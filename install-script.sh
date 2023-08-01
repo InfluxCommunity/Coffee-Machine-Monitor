@@ -18,7 +18,7 @@ echo 'deb [signed-by=/etc/apt/trusted.gpg.d/influxdata-archive_compat.gpg] https
 sudo usermod -aG docker $USER
 
 # start containers
-sudo docker-compose up -d
+sudo docker compose up -d
 
 # setup influx CLI
 sudo apt-get update && sudo apt-get install influxdb2-cli
