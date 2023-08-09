@@ -13,6 +13,7 @@ services:
     user: telegraf:998
     networks:
       - demo
+    restart: unless-stopped
 #  privileged: true
   influxdb:
     image: influxdb:latest
@@ -31,6 +32,7 @@ services:
       - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=edge
     networks:
       - demo
+    restart: unless-stopped
 networks: 
   demo:
 
