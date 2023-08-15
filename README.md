@@ -54,7 +54,7 @@ export INFLUXDB_CLOUD_BUCKET_ID=
 ```
 5. (Optional) Run the following configuration script to setup dashboards, tasks and Edge Data Replication. **This step is recommended unless you plan to create your own dashboards and tasks.**
 ```bash
-chmod +x ./Coffee-Machine-Monitor/setup-script.sh
+sudo chmod +x ./Coffee-Machine-Monitor/setup-script.sh
 ./Coffee-Machine-Monitor/setup-script.sh
 ```
 
