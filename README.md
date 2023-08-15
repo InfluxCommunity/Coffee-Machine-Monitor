@@ -38,7 +38,7 @@ git clone https://github.com/InfluxCommunity/Coffee-Machine-Monitor
 ```
 2. Run the installation script. Root privilege is required for installing docker.
 ```bash
-chmod +x ./Coffee-Machine-Monitor/install-script.sh
+sudo chmod +x ./Coffee-Machine-Monitor/install-script.sh
 ./Coffee-Machine-Monitor/install-script.sh
 ```
 3. Create a secrets file within  ``Coffee-Machine-Monitor``.
